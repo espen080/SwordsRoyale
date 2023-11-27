@@ -37,13 +37,23 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	/** Strike Input Action */
+	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* StrikeAction;
 
-	/** Strike animation*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations, meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* StrikeAnimation;
+	/** Block Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* BlockAction;
+
+	/** Dodge Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	bool bIsAttacking = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	bool bIsBlocking = false;
 public:
 	ASwordsRoyaleCharacter();
 	
@@ -57,7 +67,15 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	/** Called for strike input */
-	void Strike();
+	void Attack();
+	void StopAttacking();
+
+	/** Called for block input*/
+	void Block();
+	void StopBlocking();
+
+	/** Called for dodge input*/
+	void Dodge();
 			
 
 protected:

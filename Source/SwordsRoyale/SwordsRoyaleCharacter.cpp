@@ -7,6 +7,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -85,7 +87,15 @@ void ASwordsRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Look);
 
 		//Striking
-		EnhancedInputComponent->BindAction(StrikeAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::Strike);
+		EnhancedInputComponent->BindAction(StrikeAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Attack);
+		EnhancedInputComponent->BindAction(StrikeAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::StopAttacking);
+		
+		//Blocking
+		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Block);
+		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::StopBlocking);
+
+		// Dodging
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::Dodge);
 
 	}
 
@@ -127,15 +137,34 @@ void ASwordsRoyaleCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ASwordsRoyaleCharacter::Strike()
+void ASwordsRoyaleCharacter::Attack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
-	if (StrikeAnimation)
-	{
-		PlayAnimMontage(StrikeAnimation);
-	}
+	bIsAttacking = true;
+
 }
 
+void ASwordsRoyaleCharacter::StopAttacking()
+{
+	bIsAttacking = false;
+}
 
+void ASwordsRoyaleCharacter::Block()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Player is blocking"));
+	bIsBlocking = true;
+
+}
+
+void ASwordsRoyaleCharacter::StopBlocking()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Block ended"));
+	bIsBlocking = false;
+}
+
+void ASwordsRoyaleCharacter::Dodge()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Player pressed dodge"));
+}
 
 
