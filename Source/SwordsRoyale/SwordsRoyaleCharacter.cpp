@@ -175,7 +175,6 @@ void ASwordsRoyaleCharacter::Look(const FInputActionValue& Value)
 void ASwordsRoyaleCharacter::OnAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
-	OnHealthUpdate();
 	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
 
 }
@@ -243,3 +242,18 @@ void ASwordsRoyaleCharacter::OnRep_CurrentHealth()
 	OnHealthUpdate();
 }
 
+void ASwordsRoyaleCharacter::SetCurrentHealth(float healthValue)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		CurrentHealth = FMath::Clamp(healthValue, 0.f, MaxHealth);
+		OnHealthUpdate();
+	}
+}
+
+float ASwordsRoyaleCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float damageApplied = CurrentHealth - DamageTaken;
+	SetCurrentHealth(damageApplied);
+	return damageApplied;
+}
