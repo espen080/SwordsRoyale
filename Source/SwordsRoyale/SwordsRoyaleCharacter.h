@@ -39,7 +39,11 @@ class ASwordsRoyaleCharacter : public ACharacter
 
 	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* StrikeAction;
+	class UInputAction* AttackAction;
+
+	/** Attack animation montage*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* AttackAnimMontage;
 
 	/** Block Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -49,7 +53,7 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DodgeAction;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Attack, EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
@@ -60,6 +64,9 @@ public:
 	/** Property replication */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayAnimMontage(UAnimMontage* animMontage);
+
 protected:
 
 	/** Called for movement input */
@@ -69,8 +76,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	/** Called for strike input */
-	void Attack();
-	void StopAttacking();
+	void OnAttack();
 
 	/** Called for block input*/
 	void Block();
@@ -90,9 +96,6 @@ protected:
 	/** RepNotify for changes made to current health.*/
 	UFUNCTION()
 	void OnRep_CurrentHealth();
-
-	UFUNCTION()
-	void OnRep_Attack();
 			
 	/** Response to health being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
 	void OnHealthUpdate();

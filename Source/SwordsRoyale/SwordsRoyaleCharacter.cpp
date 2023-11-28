@@ -63,7 +63,6 @@ void ASwordsRoyaleCharacter::GetLifetimeReplicatedProps(TArray <FLifetimePropert
 
 	//Replicate current health.
 	DOREPLIFETIME(ASwordsRoyaleCharacter, CurrentHealth);
-	DOREPLIFETIME(ASwordsRoyaleCharacter, bIsAttacking);
 }
 
 void ASwordsRoyaleCharacter::BeginPlay()
@@ -100,8 +99,7 @@ void ASwordsRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Look);
 
 		//Striking
-		EnhancedInputComponent->BindAction(StrikeAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Attack);
-		EnhancedInputComponent->BindAction(StrikeAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::StopAttacking);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::OnAttack);
 		
 		//Blocking
 		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Block);
@@ -150,17 +148,26 @@ void ASwordsRoyaleCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ASwordsRoyaleCharacter::Attack()
+
+void ASwordsRoyaleCharacter::OnAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
-	bIsAttacking = true;
+	OnHealthUpdate();
+	MulticastPlayAnimMontage(AttackAnimMontage);
 
 }
 
-void ASwordsRoyaleCharacter::StopAttacking()
+void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontage* animMontage) 
 {
-	bIsAttacking = false;
-	OnHealthUpdate();
+	if (animMontage != NULL)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance != NULL)
+		{
+			AnimInstance->Montage_Play(animMontage, 1.f);
+		}
+	}
 }
 
 void ASwordsRoyaleCharacter::Block()
@@ -186,7 +193,7 @@ void ASwordsRoyaleCharacter::OnHealthUpdate()
 	//Client-specific functionality
 	if (IsLocallyControlled())
 	{
-		FString healthMessage = FString::Printf(TEXT("You now have %f health remaining."), CurrentHealth);
+		FString healthMessage = FString::Printf(TEXT("You now have %f health remaining. Local"), CurrentHealth);
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
 
 		if (CurrentHealth <= 0)
@@ -199,8 +206,8 @@ void ASwordsRoyaleCharacter::OnHealthUpdate()
 	//Server-specific functionality
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		FString healthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetFName().ToString(), CurrentHealth);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
+		FString healthMessage = FString::Printf(TEXT("%s now has %f health remaining. Server"), *GetFName().ToString(), CurrentHealth);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, healthMessage);
 	}
 
 	//Functions that occur on all machines. 
@@ -214,7 +221,3 @@ void ASwordsRoyaleCharacter::OnRep_CurrentHealth()
 	OnHealthUpdate();
 }
 
-void ASwordsRoyaleCharacter::OnRep_Attack()
-{
-	Attack();
-}
