@@ -49,7 +49,7 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DodgeAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(ReplicatedUsing = OnRep_Attack, EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
@@ -57,6 +57,8 @@ class ASwordsRoyaleCharacter : public ACharacter
 public:
 	ASwordsRoyaleCharacter();
 	
+	/** Property replication */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 
@@ -76,7 +78,24 @@ protected:
 
 	/** Called for dodge input*/
 	void Dodge();
+
+	/** The player's maximum health. This is the highest value of their health can be. This value is a value of the player's health, which starts at when spawned.*/
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+	float MaxHealth;
+
+	/** The player's current health. When reduced to 0, they are considered dead.*/
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
+	float CurrentHealth;
+
+	/** RepNotify for changes made to current health.*/
+	UFUNCTION()
+	void OnRep_CurrentHealth();
+
+	UFUNCTION()
+	void OnRep_Attack();
 			
+	/** Response to health being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
+	void OnHealthUpdate();
 
 protected:
 	// APawn interface
