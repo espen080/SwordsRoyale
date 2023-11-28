@@ -11,6 +11,7 @@
 #include "Engine/Engine.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SwordsRoyaleWeapon.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,6 +53,7 @@ ASwordsRoyaleCharacter::ASwordsRoyaleCharacter()
 	// Initialize the player's Health
 	MaxHealth = 100.0f;
 	CurrentHealth = MaxHealth;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -78,6 +80,27 @@ void ASwordsRoyaleCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	FVector SocketLocationL = GetMesh()->GetSocketLocation("weapon_socket_l");
+	FRotator SocketRotatorL = GetMesh()->GetSocketRotation("weapon_socket_l");
+
+	FActorSpawnParameters spawnParameters;
+	spawnParameters.Instigator = GetInstigator();
+	spawnParameters.Owner = this;
+
+	Weapon = GetWorld()->SpawnActor<ASwordsRoyaleWeapon>(
+		SocketLocationL,
+		SocketRotatorL,
+		spawnParameters
+	);
+
+	Weapon->AttachToComponent(
+		GetMesh(),
+		FAttachmentTransformRules( 
+			EAttachmentRule::SnapToTarget, 
+			false
+		), 
+		"weapon_socket_l"
+	);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -153,11 +176,11 @@ void ASwordsRoyaleCharacter::OnAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
 	OnHealthUpdate();
-	MulticastPlayAnimMontage(AttackAnimMontage);
+	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
 
 }
 
-void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontage* animMontage) 
+void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontage* animMontage, float InPlayRate) 
 {
 	if (animMontage != NULL)
 	{
@@ -165,7 +188,7 @@ void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontag
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance != NULL)
 		{
-			AnimInstance->Montage_Play(animMontage, 1.f);
+			AnimInstance->Montage_Play(animMontage, InPlayRate);
 		}
 	}
 }
@@ -174,7 +197,6 @@ void ASwordsRoyaleCharacter::Block()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player is blocking"));
 	bIsBlocking = true;
-
 }
 
 void ASwordsRoyaleCharacter::StopBlocking()
