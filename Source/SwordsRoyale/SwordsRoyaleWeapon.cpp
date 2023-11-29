@@ -3,6 +3,9 @@
 
 #include "SwordsRoyaleWeapon.h"
 #include "Components/StaticMeshComponent.h"
+#include "SwordsRoyaleCharacter.h"
+#include "GameFramework/DamageType.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASwordsRoyaleWeapon::ASwordsRoyaleWeapon()
@@ -21,6 +24,9 @@ ASwordsRoyaleWeapon::ASwordsRoyaleWeapon()
 	{
 		SkeletalMesh->SetSkeletalMesh(DefaultMesh.Object);
 	}
+
+	DamageType = UDamageType::StaticClass();
+	Damage = 10.0f;
 }
 
 // Called when the game starts or when spawned
@@ -34,10 +40,15 @@ void ASwordsRoyaleWeapon::BeginPlay()
 void ASwordsRoyaleWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	CheckWeponHit();
 
+}
+
+void ASwordsRoyaleWeapon::CheckWeponHit()
+{
 	/*
-	Hit detection courtesy of:
-	https://dev.epicgames.com/community/snippets/2rR/simple-c-line-trace-collision-query
+		Hit detection courtesy of:
+		https://dev.epicgames.com/community/snippets/2rR/simple-c-line-trace-collision-query
 	*/
 	// FHitResult will hold all data returned by our line collision query
 	FHitResult Hit;
@@ -64,6 +75,11 @@ void ASwordsRoyaleWeapon::Tick(float DeltaTime)
 	// and its fields will be filled with detailed info about what was hit
 	if (Hit.bBlockingHit && IsValid(Hit.GetActor()))
 	{
+		ASwordsRoyaleCharacter* OtherActor = Cast<ASwordsRoyaleCharacter>(Hit.GetActor());
+		if (IsValid(OtherActor))
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigator()->Controller, this, DamageType);
+		}
 		UE_LOG(LogTemp, Log, TEXT("Trace hit actor: %s"), *Hit.GetActor()->GetName());
 	}
 	else {

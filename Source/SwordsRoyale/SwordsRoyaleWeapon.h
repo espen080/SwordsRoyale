@@ -16,6 +16,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USkeletalMeshComponent* SkeletalMesh;
 
+	//The damage type and damage that will be done by this projectile
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	TSubclassOf<class UDamageType> DamageType;
+
+	//The damage dealt by this projectile.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	float Damage;
+
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TEnumAsByte<ECollisionChannel> TraceChannelProperty = ECC_Pawn;
 
@@ -25,6 +33,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Called by Tick to see i weapon collided
+	void CheckWeponHit();
 
 public:	
 	// Called every frame
