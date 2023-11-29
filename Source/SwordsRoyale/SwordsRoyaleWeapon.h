@@ -10,6 +10,9 @@ UCLASS()
 class SWORDSROYALE_API ASwordsRoyaleWeapon : public AActor
 {
 	GENERATED_BODY()
+
+	// FHitResult will hold all data returned by our line collision query
+	FHitResult Hit;
 	
 public:	
 	// Static Mesh used to provide a visual representation of the object.

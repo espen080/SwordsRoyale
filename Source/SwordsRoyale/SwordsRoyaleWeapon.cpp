@@ -40,7 +40,11 @@ void ASwordsRoyaleWeapon::BeginPlay()
 void ASwordsRoyaleWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	CheckWeponHit();
+	ASwordsRoyaleCharacter* owner = Cast<ASwordsRoyaleCharacter>(this->Owner);
+	if (IsValid(owner) && owner->GetIsAttacking() && !owner->GetAttackDidHit())
+	{
+			CheckWeponHit();
+	}
 
 }
 
@@ -50,8 +54,7 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 		Hit detection courtesy of:
 		https://dev.epicgames.com/community/snippets/2rR/simple-c-line-trace-collision-query
 	*/
-	// FHitResult will hold all data returned by our line collision query
-	FHitResult Hit;
+
 
 	// We set up a line trace from our current location to a point 1000cm ahead of us
 	FVector TraceStart = SkeletalMesh->GetSocketLocation("sword_start");
@@ -79,6 +82,8 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 		if (IsValid(OtherActor))
 		{
 			UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigator()->Controller, this, DamageType);
+			ASwordsRoyaleCharacter* owner = Cast<ASwordsRoyaleCharacter>(this->Owner);
+			owner->SetAttackdidHit();
 		}
 		UE_LOG(LogTemp, Log, TEXT("Trace hit actor: %s"), *Hit.GetActor()->GetName());
 	}

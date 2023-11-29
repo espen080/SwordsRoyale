@@ -48,6 +48,10 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* AttackAnimMontage;
 
+	/** On hit amnimation montage*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* OnHitAnimMontage;
+
 	/** Block Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* BlockAction;
@@ -61,6 +65,10 @@ class ASwordsRoyaleCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
 	bool bIsBlocking = false;
+
+	FTimerHandle AttackTimer;
+
+	bool bAttackDidHit = false;
 public:
 	ASwordsRoyaleCharacter();
 	
@@ -74,6 +82,16 @@ public:
 	/** Getter for Current Health.*/
 	UFUNCTION(BlueprintPure, Category = "Health")
 	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+
+	/** Getter for Is Attacking.*/
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	FORCEINLINE float GetIsAttacking() const { return bIsAttacking; }
+
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	FORCEINLINE float GetAttackDidHit() const { return bAttackDidHit; }
+
+	UFUNCTION(BlueprintCallable, Category = "Ability")
+	void SetAttackdidHit();
 
 	/** Setter for Current Health. Clamps the value between 0 and MaxHealth and calls OnHealthUpdate. Should only be called on the server.*/
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -94,8 +112,9 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	/** Called for strike input */
+	/** Called for attack input */
 	void OnAttack();
+	void StopAttacking();
 
 	/** Called for block input*/
 	void Block();

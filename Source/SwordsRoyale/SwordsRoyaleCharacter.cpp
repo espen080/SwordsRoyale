@@ -175,8 +175,21 @@ void ASwordsRoyaleCharacter::Look(const FInputActionValue& Value)
 void ASwordsRoyaleCharacter::OnAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
+	bIsAttacking = true;
 	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
+	GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopAttacking, AttackAnimMontage->GetPlayLength() / 2, false);
 
+}
+
+void ASwordsRoyaleCharacter::SetAttackdidHit()
+{
+	bAttackDidHit = true;
+}
+
+void ASwordsRoyaleCharacter::StopAttacking()
+{
+	bIsAttacking = false;
+	bAttackDidHit = false;
 }
 
 void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontage* animMontage, float InPlayRate) 
@@ -235,6 +248,8 @@ void ASwordsRoyaleCharacter::OnHealthUpdate()
 	/*
 		Any special functionality that should occur as a result of damage or death should be placed here.
 	*/
+	MulticastPlayAnimMontage(OnHitAnimMontage, 1.0f);
+
 }
 
 void ASwordsRoyaleCharacter::OnRep_CurrentHealth()
