@@ -12,6 +12,5 @@ ASwordsRoyaleGameMode::ASwordsRoyaleGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
-
 	UE_LOG(LogTemp, Warning, TEXT("Battle commencing!"));
 }
