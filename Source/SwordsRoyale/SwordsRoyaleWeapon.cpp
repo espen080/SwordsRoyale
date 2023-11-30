@@ -65,8 +65,6 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 		Hit detection courtesy of:
 		https://dev.epicgames.com/community/snippets/2rR/simple-c-line-trace-collision-query
 	*/
-
-
 	// We set up a line trace from our current location to a point 1000cm ahead of us
 	FVector TraceStart = SkeletalMesh->GetSocketLocation("sword_start");
 	FVector TraceEnd = SkeletalMesh->GetSocketLocation("sword_end");
@@ -76,11 +74,8 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, TraceChannelProperty, QueryParams);
 
 	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 1.0f, 0, 1.0f);
-	//UE_LOG(LogTemp, Log, TEXT("Tracing line: %s to %s"), *TraceStart.ToCompactString(), *TraceEnd.ToCompactString());
+	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 1.0f, 0, 1.0f);
 
-	// If the trace hit something, bBlockingHit will be true,
-	// and its fields will be filled with detailed info about what was hit
 	if (Hit.bBlockingHit && IsValid(Hit.GetActor()))
 	{
 		ASwordsRoyaleCharacter* OtherActor = Cast<ASwordsRoyaleCharacter>(Hit.GetActor());
@@ -89,7 +84,6 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 			QueryParams.AddIgnoredActor(OtherActor);
 			HandleHit(OtherActor);
 		}
-		UE_LOG(LogTemp, Log, TEXT("Trace hit actor: %s"), *Hit.GetActor()->GetName());
 	}
 }
 
@@ -104,4 +98,5 @@ void ASwordsRoyaleWeapon::HandleHit_Implementation(ASwordsRoyaleCharacter* Other
 		UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigator()->Controller, this, DamageType);
 	}
 }
+
 

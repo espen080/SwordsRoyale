@@ -65,6 +65,11 @@ void ASwordsRoyaleCharacter::GetLifetimeReplicatedProps(TArray <FLifetimePropert
 
 	//Replicate current health.
 	DOREPLIFETIME(ASwordsRoyaleCharacter, CurrentHealth);
+	DOREPLIFETIME(ASwordsRoyaleCharacter, bIsAttacking);
+	DOREPLIFETIME(ASwordsRoyaleCharacter, bIsBlocking);
+	DOREPLIFETIME(ASwordsRoyaleCharacter, bIsStunned);
+
+
 }
 
 void ASwordsRoyaleCharacter::BeginPlay()
@@ -80,27 +85,30 @@ void ASwordsRoyaleCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	FVector SocketLocationL = GetMesh()->GetSocketLocation("weapon_socket_l");
-	FRotator SocketRotatorL = GetMesh()->GetSocketRotation("weapon_socket_l");
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		FVector SocketLocationL = GetMesh()->GetSocketLocation("weapon_socket_l");
+		FRotator SocketRotatorL = GetMesh()->GetSocketRotation("weapon_socket_l");
 
-	FActorSpawnParameters spawnParameters;
-	spawnParameters.Instigator = GetInstigator();
-	spawnParameters.Owner = this;
+		FActorSpawnParameters spawnParameters;
+		spawnParameters.Instigator = GetInstigator();
+		spawnParameters.Owner = this;
 
-	Weapon = GetWorld()->SpawnActor<ASwordsRoyaleWeapon>(
-		SocketLocationL,
-		SocketRotatorL,
-		spawnParameters
-	);
+		Weapon = GetWorld()->SpawnActor<ASwordsRoyaleWeapon>(
+			SocketLocationL,
+			SocketRotatorL,
+			spawnParameters
+		);
 
-	Weapon->AttachToComponent(
-		GetMesh(),
-		FAttachmentTransformRules( 
-			EAttachmentRule::SnapToTarget, 
-			false
-		), 
-		"weapon_socket_l"
-	);
+		Weapon->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules(
+				EAttachmentRule::SnapToTarget,
+				false
+			),
+			"weapon_socket_l"
+		);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -175,40 +183,40 @@ void ASwordsRoyaleCharacter::StartAttack()
 {
 	if (!bIsAttacking)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
-		bIsAttacking = true;
-		//MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
-		GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopAttack, AttackAnimMontage->GetPlayLength() / 2, false);
 		HandleAttack();
 	}
 	
 }
 
-void ASwordsRoyaleCharacter::HandleAttack_Implementation()
-{
-	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
-}
-
-void ASwordsRoyaleCharacter::SetAttackdidHit()
-{
-	bAttackDidHit = true;
-}
-
 void ASwordsRoyaleCharacter::StopAttack()
 {
-	bIsAttacking = false;
-	bAttackDidHit = false;
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		bIsAttacking = false;
+	}
 }
 
-void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontage* animMontage, float InPlayRate) 
+void ASwordsRoyaleCharacter::HandleAttack_Implementation()
 {
-	if (animMontage != NULL)
+	bIsAttacking = true;
+	OnAttack();
+	GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopAttack, AttackAnimMontage->GetPlayLength() / 2, false);
+}
+
+void ASwordsRoyaleCharacter::OnRep_Attack()
+{
+	OnAttack();
+}
+
+void ASwordsRoyaleCharacter::OnAttack()
+{
+	if (AttackAnimMontage != NULL && bIsAttacking)
 	{
 		// Get the animation object for the arms mesh
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance != NULL)
 		{
-			AnimInstance->Montage_Play(animMontage, InPlayRate);
+			AnimInstance->Montage_Play(AttackAnimMontage, 2.0f);
 		}
 	}
 }
@@ -217,9 +225,6 @@ void ASwordsRoyaleCharacter::Block()
 {
 	if (!bIsBlocking)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Player is blocking"));
-		bIsBlocking = true;
-		GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopBlocking, BlockAnimMontage->GetPlayLength() / 2, false);
 		HandleBlock();
 	}
 	
@@ -227,18 +232,76 @@ void ASwordsRoyaleCharacter::Block()
 
 void ASwordsRoyaleCharacter::StopBlocking()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Block ended"));
-	bIsBlocking = false;
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		bIsBlocking = false;
+	}
 }
 
 void ASwordsRoyaleCharacter::HandleBlock_Implementation()
 {
-	MulticastPlayAnimMontage(BlockAnimMontage, 2.0f);
+	bIsBlocking = true;
+	OnBlock();
+	GetWorld()->GetTimerManager().SetTimer(BlockTimer, this, &ASwordsRoyaleCharacter::StopBlocking, BlockAnimMontage->GetPlayLength() / 2, false);
+}
+
+void ASwordsRoyaleCharacter::OnRep_Block() 
+{
+	OnBlock();
+}
+
+void ASwordsRoyaleCharacter::OnBlock() 
+{
+	if (BlockAnimMontage != NULL && bIsBlocking)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance != NULL)
+		{
+			AnimInstance->Montage_Play(BlockAnimMontage, 2.0f);
+		}
+	}
 }
 
 void ASwordsRoyaleCharacter::SetStunned()
 {
-	MulticastPlayAnimMontage(StunAnimMontage, 1.0f);
+	if (!bIsStunned)
+	{
+		HandleStunned();
+	}
+}
+
+void ASwordsRoyaleCharacter::EndStunned()
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		bIsStunned = false;
+	}
+}
+
+void ASwordsRoyaleCharacter::HandleStunned_Implementation()
+{
+	bIsStunned = true;
+	OnStunned();
+	GetWorld()->GetTimerManager().SetTimer(StunnedTimer, this, &ASwordsRoyaleCharacter::EndStunned, StunAnimMontage->GetPlayLength(), false);
+}
+
+void ASwordsRoyaleCharacter::OnRep_Stunned()
+{
+	OnStunned();
+}
+
+void ASwordsRoyaleCharacter::OnStunned()
+{
+	if (StunAnimMontage != NULL && bIsStunned)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance != NULL)
+		{
+			AnimInstance->Montage_Play(StunAnimMontage, 1.0f);
+		}
+	}
 }
 
 void ASwordsRoyaleCharacter::Dodge()
@@ -272,7 +335,15 @@ void ASwordsRoyaleCharacter::OnHealthUpdate()
 	/*
 		Any special functionality that should occur as a result of damage or death should be placed here.
 	*/
-	MulticastPlayAnimMontage(OnHitAnimMontage, 1.0f);
+	if (OnHitAnimMontage != NULL)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance != NULL)
+		{
+			AnimInstance->Montage_Play(OnHitAnimMontage, 1.0f);
+		}
+	}
 
 }
 

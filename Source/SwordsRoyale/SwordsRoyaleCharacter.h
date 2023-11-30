@@ -52,15 +52,9 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* BlockAnimMontage;
 
-
-
-	UPROPERTY(Replicated)
-	bool bIsAttacking = false;
-
-	UPROPERTY(Replicated)
-	bool bIsBlocking = false;
-
 	FTimerHandle AttackTimer;
+	FTimerHandle BlockTimer;
+	FTimerHandle StunnedTimer;
 
 
 public:
@@ -69,6 +63,14 @@ public:
 	/** Property replication */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	/** Getter for Is Attacking.*/
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
+
+	/** Getter for Is Blocking.*/
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
+
 	/** Getter for Max Health.*/
 	UFUNCTION(BlueprintPure, Category = "Health")
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
@@ -76,20 +78,6 @@ public:
 	/** Getter for Current Health.*/
 	UFUNCTION(BlueprintPure, Category = "Health")
 	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
-
-	/** Getter for Is Attacking.*/
-	UFUNCTION(BlueprintPure, Category = "Ability")
-	FORCEINLINE float GetIsAttacking() const { return bIsAttacking; }
-
-	/** Getter for Is Blocking.*/
-	UFUNCTION(BlueprintPure, Category = "Ability")
-	FORCEINLINE float GetIsBlocking() const { return bIsBlocking; }
-
-	UFUNCTION(BlueprintPure, Category = "Ability")
-	FORCEINLINE bool GetAttackDidHit() const { return bAttackDidHit; }
-
-	UFUNCTION(BlueprintCallable, Category = "Ability")
-	void SetAttackdidHit();
 
 	UFUNCTION(BlueprintCallable, Category = "Ability")
 	void SetStunned();
@@ -101,9 +89,6 @@ public:
 	/** Event for taking damage. Overridden from APawn.*/
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	float TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayAnimMontage(UAnimMontage* animMontage, float InPlayRate);
 
 protected:
 
@@ -118,36 +103,52 @@ protected:
 	void StartAttack();
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void StopAttack();
+	UPROPERTY(ReplicatedUsing = OnRep_Attack)
+	bool bIsAttacking = false;
 	UFUNCTION(Server, Reliable)
 	void HandleAttack();
+	UFUNCTION()
+	void OnRep_Attack();
+	void OnAttack();
+
 
 	/** Called for block input*/
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void Block();
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void StopBlocking();
+	UPROPERTY(ReplicatedUsing = OnRep_Block)
+	bool bIsBlocking = false;
 	UFUNCTION(Server, Reliable)
 	void HandleBlock();
+	UFUNCTION()
+	void OnRep_Block();
+	void OnBlock();
+
+	/** Handle character stun*/
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+	void EndStunned();
+	UPROPERTY(ReplicatedUsing = OnRep_Stunned)
+	bool bIsStunned = false;
+	UFUNCTION(Server, Reliable)
+	void HandleStunned();
+	UFUNCTION()
+	void OnRep_Stunned();
+	void OnStunned();
 
 
 	/** Called for dodge input*/
 	void Dodge();
 
-	UPROPERTY(Replicated)
-	bool bAttackDidHit = false;
-
 	/** The player's maximum health. This is the highest value of their health can be. This value is a value of the player's health, which starts at when spawned.*/
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 	float MaxHealth;
-
 	/** The player's current health. When reduced to 0, they are considered dead.*/
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
 	float CurrentHealth;
-
 	/** RepNotify for changes made to current health.*/
 	UFUNCTION()
 	void OnRep_CurrentHealth();
-			
 	/** Response to health being updated. Called on the server immediately after modification, and on clients in response to a RepNotify*/
 	void OnHealthUpdate();
 
