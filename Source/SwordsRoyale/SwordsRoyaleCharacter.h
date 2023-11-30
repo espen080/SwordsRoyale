@@ -28,47 +28,41 @@ class ASwordsRoyaleCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class ASwordsRoyaleWeapon* Weapon;
 
-	/** Jump Input Action */
+	/**Input Actions */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
-
-	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
-
-	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
-
-	/** Attack Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* AttackAction;
-
-	/** Attack animation montage*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* AttackAnimMontage;
-
-	/** On hit amnimation montage*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* OnHitAnimMontage;
-
-	/** Block Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* BlockAction;
-
-	/** Dodge Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DodgeAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	/** Animation montages*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* AttackAnimMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* OnHitAnimMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* StunAnimMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* BlockAnimMontage;
+
+
+
+	UPROPERTY(Replicated)
 	bool bIsAttacking = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Variables, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated)
 	bool bIsBlocking = false;
 
 	FTimerHandle AttackTimer;
 
-	bool bAttackDidHit = false;
+
 public:
 	ASwordsRoyaleCharacter();
 	
@@ -87,11 +81,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Ability")
 	FORCEINLINE float GetIsAttacking() const { return bIsAttacking; }
 
+	/** Getter for Is Blocking.*/
 	UFUNCTION(BlueprintPure, Category = "Ability")
-	FORCEINLINE float GetAttackDidHit() const { return bAttackDidHit; }
+	FORCEINLINE float GetIsBlocking() const { return bIsBlocking; }
+
+	UFUNCTION(BlueprintPure, Category = "Ability")
+	FORCEINLINE bool GetAttackDidHit() const { return bAttackDidHit; }
 
 	UFUNCTION(BlueprintCallable, Category = "Ability")
 	void SetAttackdidHit();
+
+	UFUNCTION(BlueprintCallable, Category = "Ability")
+	void SetStunned();
 
 	/** Setter for Current Health. Clamps the value between 0 and MaxHealth and calls OnHealthUpdate. Should only be called on the server.*/
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -113,15 +114,27 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	/** Called for attack input */
-	void OnAttack();
-	void StopAttacking();
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+	void StartAttack();
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+	void StopAttack();
+	UFUNCTION(Server, Reliable)
+	void HandleAttack();
 
 	/** Called for block input*/
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void Block();
+	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void StopBlocking();
+	UFUNCTION(Server, Reliable)
+	void HandleBlock();
+
 
 	/** Called for dodge input*/
 	void Dodge();
+
+	UPROPERTY(Replicated)
+	bool bAttackDidHit = false;
 
 	/** The player's maximum health. This is the highest value of their health can be. This value is a value of the player's health, which starts at when spawned.*/
 	UPROPERTY(EditDefaultsOnly, Category = "Health")

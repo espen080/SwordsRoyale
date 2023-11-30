@@ -13,23 +13,20 @@ class SWORDSROYALE_API ASwordsRoyaleWeapon : public AActor
 
 	// FHitResult will hold all data returned by our line collision query
 	FHitResult Hit;
-	
-public:	
-	// Static Mesh used to provide a visual representation of the object.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+
 	class USkeletalMeshComponent* SkeletalMesh;
 
-	//The damage type and damage that will be done by this projectile
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	TSubclassOf<class UDamageType> DamageType;
 
-	//The damage dealt by this projectile.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	float Damage;
 
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TEnumAsByte<ECollisionChannel> TraceChannelProperty = ECC_Pawn;
+	FCollisionQueryParams QueryParams;
 
+	class ASwordsRoyaleCharacter* Wielder;
+	
+public:	
 	// Sets default values for this actor's properties
 	ASwordsRoyaleWeapon();
 
@@ -39,6 +36,9 @@ protected:
 
 	// Called by Tick to see i weapon collided
 	void CheckWeponHit();
+
+	UFUNCTION(Server, Reliable)
+	void HandleHit(ASwordsRoyaleCharacter* OtherActor);
 
 public:	
 	// Called every frame

@@ -122,12 +122,11 @@ void ASwordsRoyaleCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Look);
 
 		//Striking
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::OnAttack);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::StartAttack);
 		
 		//Blocking
-		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Triggered, this, &ASwordsRoyaleCharacter::Block);
-		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::StopBlocking);
-
+		EnhancedInputComponent->BindAction(BlockAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::Block);
+		
 		// Dodging
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Completed, this, &ASwordsRoyaleCharacter::Dodge);
 
@@ -172,13 +171,22 @@ void ASwordsRoyaleCharacter::Look(const FInputActionValue& Value)
 }
 
 
-void ASwordsRoyaleCharacter::OnAttack()
+void ASwordsRoyaleCharacter::StartAttack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
-	bIsAttacking = true;
-	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
-	GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopAttacking, AttackAnimMontage->GetPlayLength() / 2, false);
+	if (!bIsAttacking)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player pressed strike"));
+		bIsAttacking = true;
+		//MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
+		GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopAttack, AttackAnimMontage->GetPlayLength() / 2, false);
+		HandleAttack();
+	}
+	
+}
 
+void ASwordsRoyaleCharacter::HandleAttack_Implementation()
+{
+	MulticastPlayAnimMontage(AttackAnimMontage, 2.0f);
 }
 
 void ASwordsRoyaleCharacter::SetAttackdidHit()
@@ -186,7 +194,7 @@ void ASwordsRoyaleCharacter::SetAttackdidHit()
 	bAttackDidHit = true;
 }
 
-void ASwordsRoyaleCharacter::StopAttacking()
+void ASwordsRoyaleCharacter::StopAttack()
 {
 	bIsAttacking = false;
 	bAttackDidHit = false;
@@ -207,14 +215,30 @@ void ASwordsRoyaleCharacter::MulticastPlayAnimMontage_Implementation(UAnimMontag
 
 void ASwordsRoyaleCharacter::Block()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Player is blocking"));
-	bIsBlocking = true;
+	if (!bIsBlocking)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player is blocking"));
+		bIsBlocking = true;
+		GetWorld()->GetTimerManager().SetTimer(AttackTimer, this, &ASwordsRoyaleCharacter::StopBlocking, BlockAnimMontage->GetPlayLength() / 2, false);
+		HandleBlock();
+	}
+	
 }
 
 void ASwordsRoyaleCharacter::StopBlocking()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Block ended"));
 	bIsBlocking = false;
+}
+
+void ASwordsRoyaleCharacter::HandleBlock_Implementation()
+{
+	MulticastPlayAnimMontage(BlockAnimMontage, 2.0f);
+}
+
+void ASwordsRoyaleCharacter::SetStunned()
+{
+	MulticastPlayAnimMontage(StunAnimMontage, 1.0f);
 }
 
 void ASwordsRoyaleCharacter::Dodge()

@@ -17,7 +17,7 @@ ASwordsRoyaleWeapon::ASwordsRoyaleWeapon()
 	// Definition for the Mesh that will serve as your visual representation.
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> DefaultMesh(TEXT("/Game/InfinityBladeWeapons/Weapons/Blade/Swords/Blade_HeroSword11/SK_Blade_HeroSword11"));
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
-	SkeletalMesh->SetupAttachment(RootComponent);
+	SetRootComponent(SkeletalMesh);
 
 	//Set the Static Mesh and its position/scale if you successfully found a mesh asset to use.
 	if (DefaultMesh.Succeeded())
@@ -27,23 +27,34 @@ ASwordsRoyaleWeapon::ASwordsRoyaleWeapon()
 
 	DamageType = UDamageType::StaticClass();
 	Damage = 10.0f;
+
 }
 
 // Called when the game starts or when spawned
 void ASwordsRoyaleWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	Wielder = Cast<ASwordsRoyaleCharacter>(this->Owner);
+	// You can use FCollisionQueryParams to further configure the query
+	// Here we add ourselves to the ignored list so we won't block the trace
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.AddIgnoredActor(this->Owner);
 }
 
 // Called every frame
 void ASwordsRoyaleWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	ASwordsRoyaleCharacter* owner = Cast<ASwordsRoyaleCharacter>(this->Owner);
-	if (IsValid(owner) && owner->GetIsAttacking() && !owner->GetAttackDidHit())
+	if (IsValid(Wielder) && Wielder->GetIsAttacking())
 	{
-			CheckWeponHit();
+		CheckWeponHit();
+	}
+	// Reset ignored actors after attack when wielder is not attacking anymore.
+	if (QueryParams.GetIgnoredActors().Num() > 2 && !Wielder->GetIsAttacking())
+	{
+		QueryParams.ClearIgnoredActors();
+		QueryParams.AddIgnoredActor(this);
+		QueryParams.AddIgnoredActor(this->Owner);
 	}
 
 }
@@ -60,19 +71,13 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 	FVector TraceStart = SkeletalMesh->GetSocketLocation("sword_start");
 	FVector TraceEnd = SkeletalMesh->GetSocketLocation("sword_end");
 
-	// You can use FCollisionQueryParams to further configure the query
-	// Here we add ourselves to the ignored list so we won't block the trace
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-	QueryParams.AddIgnoredActor(this->Owner);
-
 	// To run the query, you need a pointer to the current level, which you can get from an Actor with GetWorld()
 	// UWorld()->LineTraceSingleByChannel runs a line trace and returns the first actor hit over the provided collision channel.
 	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, TraceChannelProperty, QueryParams);
 
 	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red, false, 1.0f, 0, 1.0f);
-	UE_LOG(LogTemp, Log, TEXT("Tracing line: %s to %s"), *TraceStart.ToCompactString(), *TraceEnd.ToCompactString());
+	//UE_LOG(LogTemp, Log, TEXT("Tracing line: %s to %s"), *TraceStart.ToCompactString(), *TraceEnd.ToCompactString());
 
 	// If the trace hit something, bBlockingHit will be true,
 	// and its fields will be filled with detailed info about what was hit
@@ -81,14 +86,22 @@ void ASwordsRoyaleWeapon::CheckWeponHit()
 		ASwordsRoyaleCharacter* OtherActor = Cast<ASwordsRoyaleCharacter>(Hit.GetActor());
 		if (IsValid(OtherActor))
 		{
-			UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigator()->Controller, this, DamageType);
-			ASwordsRoyaleCharacter* owner = Cast<ASwordsRoyaleCharacter>(this->Owner);
-			owner->SetAttackdidHit();
+			QueryParams.AddIgnoredActor(OtherActor);
+			HandleHit(OtherActor);
 		}
 		UE_LOG(LogTemp, Log, TEXT("Trace hit actor: %s"), *Hit.GetActor()->GetName());
 	}
-	else {
-		UE_LOG(LogTemp, Log, TEXT("No Actors were hit"));
+}
+
+void ASwordsRoyaleWeapon::HandleHit_Implementation(ASwordsRoyaleCharacter* OtherActor)
+{
+	if (OtherActor->GetIsBlocking())
+	{
+		Wielder->SetStunned();
+	}
+	else
+	{
+		UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigator()->Controller, this, DamageType);
 	}
 }
 
