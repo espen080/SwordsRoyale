@@ -15,7 +15,7 @@ ASwordsRoyaleWeapon::ASwordsRoyaleWeapon()
 	bReplicates = true;
 
 	// Definition for the Mesh that will serve as your visual representation.
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> DefaultMesh(TEXT("/Game/InfinityBladeWeapons/Weapons/Blade/Swords/Blade_HeroSword11/SK_Blade_HeroSword11"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> DefaultMesh(TEXT("/Game/ThirdPerson/Blade_HeroSword11/SK_Blade_HeroSword11"));
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(SkeletalMesh);
 
