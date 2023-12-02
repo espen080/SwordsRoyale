@@ -212,7 +212,7 @@ void ASwordsRoyaleCharacter::OnAttack()
 {
 	if (AttackAnimMontage != NULL && bIsAttacking)
 	{
-		// Get the animation object for the arms mesh
+		// Get the animation object
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance != NULL)
 		{
